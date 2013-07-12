@@ -1,7 +1,6 @@
 require 'mongo'
 require 'fb_graph'
 require 'json'
-require 'bunny'
 require './fetcher'
 require 'sidekiq'
 
@@ -111,6 +110,21 @@ module User
 		end
 	end
 	
+	def self.get_user_movies other_fb_id, fb_id, fb_access_token
+		begin
+			User.authenticate_user fb_id,fb_access_token
+			x = $PeopleMovies.find("fb_id"=>other_fb_id).to_a.first
+			x.delete("_id")
+			return x.to_json
+		rescue FbGraph::InvalidToken => e
+			return {"error"=>true,"success"=>false,"message"=>e.to_s}.to_json
+		
+		rescue TokenMisMatchError => e
+			return {"error"=>true,"success"=>false,"message"=>e.message}.to_json
+		else	
+			return {"error"=>true,"success"=>false,"message"=>"Internal Server Error"}.to_json
+		end
+	end
 	
 end
 
@@ -123,6 +137,7 @@ class HardWorker
 		puts fb_id
 		Fetcher.fetch_user_profile fb_id, fb_access_token
 		Fetcher.fetch_user_photos fb_id, fb_access_token
+		Fetcher.fetch_user_movies fb_id, fb_access_token
 	end
 end
 
