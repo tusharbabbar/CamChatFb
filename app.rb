@@ -14,3 +14,7 @@ get '/get_user_photos/:other_fb_id/:fb_id/:fb_access_token' do
 get '/get_user_movies/:other_fb_id/:fb_id/:fb_access_token' do 
 	User.get_user_movies(params["fb_id"],params["fb_id"],params["fb_access_token"])	
 end
+
+get '/get_user_movies/:other_fb_id/:fb_id/:fb_access_token' do 
+	User.get_user_movies(params["fb_id"],params["fb_id"],params["fb_access_token"])	
+end
