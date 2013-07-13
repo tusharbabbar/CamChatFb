@@ -50,8 +50,8 @@ module Fetcher
 			name = movie.name
 			url_name = name.gsub(" ","%20")
 			res = ""
-			tmdb_res = JSON.parse(open("http://api.themoviedb.org/3/search/movie?api_key=a909408b0692355bdcd1be7a28e55bab&query=#{name}").read)
-			tmdb_res.map {|r| (r["title"]==name ? res=r : r)}
+			tmdb_res = JSON.parse(open("http://api.themoviedb.org/3/search/movie?api_key=a909408b0692355bdcd1be7a28e55bab&query=#{url_name}").read)["results"]
+			tmdb_res.map {|r| r["title"]==name ? res=r : r}
 			movie_array << "http://d3gtl9l2a4fn1j.cloudfront.net/t/p/w92#{res["poster_path"]}" 
 		end
 		doc = {"fb_id"=>fb_id , "movies" => movie_array}
