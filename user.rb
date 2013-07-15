@@ -11,6 +11,8 @@ $People = $Mongodb.collection("people")
 $PeopleProfiles = $Mongodb.collection("people_profiles")
 $PeopleMovies = $Mongodb.collection("people_movies")
 $PeoplePhotos = $Mongodb.collection("people_photos")
+$PeopleMusic = $Mongodb.collection("people_music")
+$PeopleAbout = $Mongodb.collection("people_about")
 
 class NoUserError < StandardError
 	def message
@@ -26,7 +28,7 @@ end
 
 class TokenMisMatchError < StandardError
 	def message
-		"The Fb_if and Access_token donot match"
+		"The Fb_id and Fb_Access_Token donot match"
 	end
 end
 
@@ -55,21 +57,33 @@ module User
 	
 	def self.register_user fb_id, fb_access_token
 		begin
-			puts ("\n\n\n\n#{Sidekiq::Stats.new.processed}\n\n\n\n ")
 			if $People.find("fb_id"=>fb_id).to_a.first
 				raise UserAlreadyExistsError
 			end
 			validate_token fb_id, fb_access_token
 			doc = {"fb_id"=>fb_id,"fb_access_token"=>fb_access_token}
 			$People.insert doc
-			HardWorker.perform_async fb_id,fb_access_token
-			#$exchng.publish("#{fb_id}\|#{fb_access_token}", :routing_key => $fetch_que.name)
-#			puts $fetch_que.length	
+			HardWorker.perform_async fb_id,fb_access_token	
 			return {"error"=>false,"success"=>true,"message"=>"user successfully added to system"}.to_json
 		
 		rescue UserAlreadyExistsError => e
 			return {"error"=>true,"success"=>false,"message"=>e.message}.to_json
 
+		rescue FbGraph::InvalidToken => e
+			return {"error"=>true,"success"=>false,"message"=>e.to_s}.to_json
+		
+		rescue TokenMisMatchError => e
+			return {"error"=>true,"success"=>false,"message"=>e.message}.to_json
+		end
+	end
+	
+	def self.post_user_about fb_id, fb_access_token, selections
+		begin
+			validate_token fb_id, fb_access_token
+			doc = {"fb_id"=>fb_id,"selections"=>selections}
+			$PeopleAbout.insert doc	
+			return {"error"=>false,"success"=>true,"message"=>"user about successfully added to system"}.to_json
+		
 		rescue FbGraph::InvalidToken => e
 			return {"error"=>true,"success"=>false,"message"=>e.to_s}.to_json
 		
@@ -110,10 +124,45 @@ module User
 		end
 	end
 	
+	def self.get_user_about other_fb_id, fb_id, fb_access_token
+		begin
+			User.authenticate_user fb_id,fb_access_token
+			x = $PeopleAbout.find("fb_id"=>other_fb_id).to_a.first
+			if !(x) then raise NoUserError end
+			x.delete("_id")
+			return x.to_json
+		rescue FbGraph::InvalidToken => e
+			return {"error"=>true,"success"=>false,"message"=>e.to_s}.to_json
+		
+		rescue TokenMisMatchError => e
+			return {"error"=>true,"success"=>false,"message"=>e.message}.to_json
+		rescue NoUserError => e
+			return {"error"=>true,"success"=>false,"message"=>e.message}.to_json	
+		else	
+			return {"error"=>true,"success"=>false,"message"=>"Internal Server Error"}.to_json
+		end
+	end
+	
 	def self.get_user_movies other_fb_id, fb_id, fb_access_token
 		begin
 			User.authenticate_user fb_id,fb_access_token
 			x = $PeopleMovies.find("fb_id"=>other_fb_id).to_a.first
+			x.delete("_id")
+			return x.to_json
+		rescue FbGraph::InvalidToken => e
+			return {"error"=>true,"success"=>false,"message"=>e.to_s}.to_json
+		
+		rescue TokenMisMatchError => e
+			return {"error"=>true,"success"=>false,"message"=>e.message}.to_json
+		else	
+			return {"error"=>true,"success"=>false,"message"=>"Internal Server Error"}.to_json
+		end
+	end
+	
+	def self.get_user_music other_fb_id, fb_id, fb_access_token
+		begin
+			User.authenticate_user fb_id,fb_access_token
+			x = $PeopleMusic.find("fb_id"=>other_fb_id).to_a.first
 			x.delete("_id")
 			return x.to_json
 		rescue FbGraph::InvalidToken => e
@@ -138,14 +187,7 @@ class HardWorker
 		Fetcher.fetch_user_profile fb_id, fb_access_token
 		Fetcher.fetch_user_photos fb_id, fb_access_token
 		Fetcher.fetch_user_movies fb_id, fb_access_token
+		Fetcher.fetch_user_music fb_id, fb_access_token
 	end
 end
 
-#$fetch_que.subscribe do |delivery_info, metadat, payload|
-#	payload = payload.split("|")
-#	fb_id = payload[0]
-#	fb_access_token = payload[1]
-#	puts payload
-#	Fetcher.fetch_user_profile fb_id, fb_access_token
-#	Fetcher.fetch_user_photos fb_id, fb_access_token
-#end

@@ -20,7 +20,7 @@ module Fetcher
 		user = FbGraph::User.me(fb_access_token).fetch
 		puts "here2"
 		puts user
-		name = user.name
+		username = user.name
 		location = user.location.raw_attributes["name"].split(", ")
 		city = location[0]
 		country = location[1]
@@ -30,7 +30,7 @@ module Fetcher
 		education.each do |edu|
 			name = edu.school.name
 			type = edu.type
-			schools = [name , type]
+			schools << [name , type]
 		end
 		relationship_status = user.relationship_status
 		about = user.bio
@@ -39,7 +39,7 @@ module Fetcher
 		work.each do |w|
 			jobs << [w.employer.name, w.position.name]
 		end
-		doc = {"fb_id"=>fb_id,"name"=>name,"city"=>city,"country"=>country,"interested_in"=>interested_in,"relationship_status"=>relationship_status,"education"=>schools,"work"=>jobs}	
+		doc = {"fb_id"=>fb_id,"name"=>username,"city"=>city,"country"=>country,"interested_in"=>interested_in,"relationship_status"=>relationship_status,"education"=>schools,"work"=>jobs}	
 		$PeopleProfiles.insert doc
 	end
 	
@@ -51,12 +51,28 @@ module Fetcher
 			url_name = name.gsub(" ","%20")
 			res = ""
 			tmdb_res = JSON.parse(open("http://api.themoviedb.org/3/search/movie?api_key=a909408b0692355bdcd1be7a28e55bab&query=#{url_name}").read)["results"]
-			tmdb_res.map {|r| r["title"]==name ? res=r : r}
+			if tmdb_res then tmdb_res.map {|r| r["title"]==name ? res=r : r} else next end
 			movie_array << "http://d3gtl9l2a4fn1j.cloudfront.net/t/p/w92#{res["poster_path"]}" 
 		end
 		doc = {"fb_id"=>fb_id , "movies" => movie_array}
 		$PeopleMovies.insert doc
 	end
 	
+	def self.fetch_user_music fb_id, fb_access_token
+		musics = FbGraph::User.me(fb_access_token).music ({"limit"=>150})
+		music_array = []
+		musics.each do |music|
+			name = music.name
+			url_name = name.gsub(" ","%20")
+			res = JSON.parse(open("http://ws.audioscrobbler.com/2.0/?method=artist.search&artist=#{url_name}&api_key=db660f2f6834e676949273a6d9064c4c&format=json").read)["results"]["artistmatches"]["artist"].first
+			if res then image_url = res["image"][2]["#text"] else next end
+			music_array << image_url	
+		end
+		#puts "hello"
+		doc = {"fb_id"=>fb_id, "music" => music_array}
+		#puts doc
+		$PeopleMusic.insert doc	
+	end
+		
 end
 
