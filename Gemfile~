@@ -1,5 +1,0 @@
-gem 'sidekiq'
-gem 'mongo'
-gem 'fb_graph'
-gem 'sinatra'
-
