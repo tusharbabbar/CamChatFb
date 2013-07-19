@@ -10,7 +10,7 @@ module Fetcher
 			photo = photo.source
 			small_photo = photo.gsub("s720x720","").gsub("_n","_s")
 			large_photo = photo
-			user_photos << [small_photo,large_photo]
+			user_photos << {"small_src"=>small_photo,"large_src"=>large_photo}
 		end
 		doc = {"fb_id"=>fb_id,"photos"=>user_photos}
 		$PeoplePhotos.insert doc
