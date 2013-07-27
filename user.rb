@@ -199,7 +199,7 @@ class HardWorker
 	
 	def perform fb_id, fb_access_token
 		puts fb_id
-		Fetcher.fetch_user_profile fb_id, fb_access_token
+		#Fetcher.fetch_user_profile fb_id, fb_access_token
 		Fetcher.fetch_user_photos fb_id, fb_access_token
 		Fetcher.fetch_user_movies fb_id, fb_access_token
 		Fetcher.fetch_user_music fb_id, fb_access_token

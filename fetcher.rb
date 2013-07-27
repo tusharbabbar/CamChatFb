@@ -16,32 +16,32 @@ module Fetcher
 		$PeoplePhotos.insert doc
 	end
 				
-	def self.fetch_user_profile fb_id, fb_access_token
-		user = FbGraph::User.me(fb_access_token).fetch
-		puts "here2"
-		puts user
-		username = user.name
-		location = user.location.raw_attributes["name"].split(", ")
-		city = location[0]
-		country = location[1]
-		interested_in = user.interested_in
-		education = user.education
-		schools = []
-		education.each do |edu|
-			name = edu.school.name
-			type = edu.type
-			schools << [name , type]
-		end
-		relationship_status = user.relationship_status
-		about = user.bio
-		work = user.work
-		jobs = []
-		work.each do |w|
-			jobs << [w.employer.name, w.position.name]
-		end
-		doc = {"fb_id"=>fb_id,"name"=>username,"city"=>city,"country"=>country,"interested_in"=>interested_in,"relationship_status"=>relationship_status,"education"=>schools,"work"=>jobs}	
-		$PeopleProfiles.insert doc
-	end
+#	def self.fetch_user_profile fb_id, fb_access_token
+#		user = FbGraph::User.me(fb_access_token).fetch
+#		if user.name then username = user.name end
+#		if user.location
+#		location = user.location.raw_attributes["name"].split(", ")
+#		city = location[0]
+#		country = location[1]
+#		end
+#		interested_in = user.interested_in
+#		education = user.education
+#		schools = []
+#		education.each do |edu|
+#			name = edu.school.name
+#			type = edu.type
+#			schools << [name , type]
+#		end
+#		relationship_status = user.relationship_status
+#		about = user.bio
+#		work = user.work
+#		jobs = []
+#		work.each do |w|
+#			jobs << [w.employer.name, w.position.name]
+#		end
+#		doc = {"fb_id"=>fb_id,"name"=>username,"city"=>city,"country"=>country,"interested_in"=>interested_in,"relationship_status"=>relationship_status,"education"=>schools,"work"=>jobs}	
+#		$PeopleProfiles.insert doc
+#	end
 	
 	def self.fetch_user_movies fb_id,fb_access_token
 		movies = FbGraph::User.me(fb_access_token).movies ({"limit"=>150})
