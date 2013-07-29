@@ -5,6 +5,7 @@ module Fetcher
 	def self.fetch_user_photos fb_id, fb_access_token
 		photos = FbGraph::User.me(fb_access_token).photos ({"limit"=>150})
 		puts "here1"
+		message = true
 		user_photos = []
 		photos.each do |photo|
 			photo = photo.source
@@ -12,7 +13,8 @@ module Fetcher
 			large_photo = photo
 			user_photos << {"small_src"=>small_photo,"large_src"=>large_photo}
 		end
-		doc = {"fb_id"=>fb_id,"photos"=>user_photos}
+		if !user_photos.first then message = false end
+		doc = {"fb_id"=>fb_id,"message"=>message,"photos"=>user_photos}
 		$PeoplePhotos.insert doc
 	end
 				
@@ -46,6 +48,7 @@ module Fetcher
 	def self.fetch_user_movies fb_id,fb_access_token
 		movies = FbGraph::User.me(fb_access_token).movies ({"limit"=>150})
 		movie_array = []
+		message = true
 		movies.each do |movie|
 			name = movie.name
 			url_name = name.gsub(" ","%20")
@@ -54,13 +57,15 @@ module Fetcher
 			if tmdb_res then tmdb_res.map {|r| r["title"]==name ? res=r : r} else next end
 			movie_array << {"small_src"=>"http://d3gtl9l2a4fn1j.cloudfront.net/t/p/w92#{res["poster_path"]}" }
 		end
-		doc = {"fb_id"=>fb_id , "movies" => movie_array}
+		if !movie_array.first then message = false end
+		doc = {"fb_id"=>fb_id ,"message"=>message, "movies" => movie_array}
 		$PeopleMovies.insert doc
 	end
 	
 	def self.fetch_user_music fb_id, fb_access_token
 		musics = FbGraph::User.me(fb_access_token).music ({"limit"=>150})
 		music_array = []
+		message = true
 		musics.each do |music|
 			name = music.name
 			url_name = name.gsub(" ","%20")
@@ -68,8 +73,8 @@ module Fetcher
 			if res then image_url = res["image"][2]["#text"] else next end
 			music_array << {"small_src"=>image_url}	
 		end
-		#puts "hello"
-		doc = {"fb_id"=>fb_id, "music" => music_array}
+		if !music_array.first then message = false end
+		doc = {"fb_id"=>fb_id,"message"=>message, "music" => music_array}
 		#puts doc
 		$PeopleMusic.insert doc	
 	end

@@ -86,11 +86,16 @@ module User
 	
 	def self.post_user_about fb_id, fb_access_token, selections
 		begin
+			if $PeopleAbout.find("fb_id"=>fb_id).to_a.first
+                                raise UserAlreadyExistsError
+                        end
 			validate_token fb_id, fb_access_token
 			doc = {"fb_id"=>fb_id,"selections"=>selections}
 			$PeopleAbout.insert doc	
 			return {"error"=>false,"success"=>true,"status_code"=>201,"message"=>"user about successfully added to system"}.to_json
-		
+		rescue UserAlreadyExistsError => e
+                        return {"error"=>true,"success"=>false,"status_code"=>461,"message"=>"User About has already been updated in database"}.to_json
+
 		rescue FbGraph::InvalidToken => e
 			return {"error"=>true,"success"=>false,"status_code"=>462,"message"=>e.to_s}.to_json
 		
