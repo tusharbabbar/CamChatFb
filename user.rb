@@ -26,6 +26,12 @@ class ServerError < StandardError
 	end
 end
 
+class NoContentError < StandardError
+	def message
+		"No content found for the User Given"
+	end
+end
+
 
 class UserAlreadyExistsError < StandardError
 	def message
@@ -68,7 +74,7 @@ module User
 				raise UserAlreadyExistsError
 			end
 			validate_token fb_id, fb_access_token
-			doc = {"fb_id"=>fb_id,"fb_access_token"=>fb_access_token}
+			doc = {"fb_id"=>fb_id,"fb_access_token"=>fb_access_token,}
 			$People.insert doc
 			HardWorker.perform_async fb_id,fb_access_token	
 			return {"error"=>false,"success"=>true,"status_code"=>201,"message"=>"user successfully added to system"}.to_json
@@ -90,7 +96,7 @@ module User
                                 raise UserAlreadyExistsError
                         end
 			validate_token fb_id, fb_access_token
-			doc = {"fb_id"=>fb_id,"selections"=>selections}
+			doc = {"fb_id"=>fb_id,"selections"=>selections,"message"=>true}
 			$PeopleAbout.insert doc	
 			return {"error"=>false,"success"=>true,"status_code"=>201,"message"=>"user about successfully added to system"}.to_json
 		rescue UserAlreadyExistsError => e
@@ -108,7 +114,7 @@ module User
 		begin
 			User.authenticate_user fb_id,fb_access_token
 			x = $PeopleProfiles.find("fb_id"=>other_fb_id).to_a.first
-			if !(x) then raise ServerError end
+			if !(x) then raise NoContentError end
 			x.delete("_id")
 			doc = {"error"=>false,"success"=>true,"status_code"=>200,"fb_id"=>x["fb_id"],"data"=>x}
 			return doc.to_json
@@ -118,7 +124,7 @@ module User
 		rescue TokenMisMatchError => e
 			return {"error"=>true,"success"=>false,"status_code"=>463,"message"=>e.message}.to_json
 		
-		rescue ServerError => e
+		rescue NoContentError => e
 			return {"error"=>true,"success"=>false,"status_code"=>520,"message"=>e.message}.to_json
 		end
 	end
@@ -127,8 +133,8 @@ module User
 		begin
 			User.authenticate_user fb_id,fb_access_token
 			x = $PeoplePhotos.find("fb_id"=>other_fb_id).to_a.first
-			if !(x) then raise ServerError end
-			doc = {"error"=>false,"success"=>true,"status_code"=>200,"fb_id"=>x["fb_id"],"data"=>x["photos"]}
+			if !(x) then raise NoContentError end
+			doc = {"error"=>false,"success"=>true,"status_code"=>200,"fb_id"=>x["fb_id"],"data"=>x["photos"],"message"=>x["message"]}
 			return doc.to_json
 		rescue FbGraph::InvalidToken => e
 			return {"error"=>true,"success"=>false,"status_code"=>462,"message"=>e.to_s}.to_json
@@ -136,7 +142,7 @@ module User
 		rescue TokenMisMatchError => e
 			return {"error"=>true,"success"=>false,"status_code"=>463,"message"=>e.message}.to_json
 		
-		rescue ServerError => e
+		rescue  NoContentError => e
 			return {"error"=>true,"success"=>false,"status_code"=>520,"message"=>e.message}.to_json
 		end
 	end
@@ -145,7 +151,8 @@ module User
 		begin
 			User.authenticate_user fb_id,fb_access_token
 			x = $PeopleAbout.find("fb_id"=>other_fb_id).to_a.first
-			doc = {"error"=>false,"success"=>true,"status_code"=>200,"fb_id"=>x["fb_id"],"data"=>x["selections"]}
+			if !(x) then raise NoContentError end
+			doc = {"error"=>false,"success"=>true,"status_code"=>200,"fb_id"=>x["fb_id"],"data"=>x["selections"],"message"=>x["message"]}
 			return doc.to_json
 			return x.to_json
 		rescue FbGraph::InvalidToken => e
@@ -154,7 +161,7 @@ module User
 		rescue TokenMisMatchError => e
 			return {"error"=>true,"success"=>false,"status_code"=>463,"message"=>e.message}.to_json
 		
-		rescue ServerError => e
+		rescue NoContentError => e
 			return {"error"=>true,"success"=>false,"status_code"=>520,"message"=>e.message}.to_json
 		end
 	end
@@ -163,8 +170,8 @@ module User
 		begin
 			User.authenticate_user fb_id,fb_access_token
 			x = $PeopleMovies.find("fb_id"=>other_fb_id).to_a.first
-			if !(x) then raise ServerError end
-			doc = {"error"=>false,"success"=>true,"status_code"=>200,"fb_id"=>x["fb_id"],"data"=>x["movies"]}
+			if !(x) then raise NoContentError end
+			doc = {"error"=>false,"success"=>true,"status_code"=>200,"fb_id"=>x["fb_id"],"data"=>x["movies"],"message"=>x["message"]}
 			return doc.to_json
 		rescue FbGraph::InvalidToken => e
 			return {"error"=>true,"success"=>false,"status_code"=>462,"message"=>e.to_s}.to_json
@@ -172,7 +179,7 @@ module User
 		rescue TokenMisMatchError => e
 			return {"error"=>true,"success"=>false,"status_code"=>463,"message"=>e.message}.to_json
 		
-		rescue ServerError => e
+		rescue NoContentError => e
 			return {"error"=>true,"success"=>false,"status_code"=>520,"message"=>e.message}.to_json
 		end
 	end
@@ -181,8 +188,8 @@ module User
 		begin
 			User.authenticate_user fb_id,fb_access_token
 			x = $PeopleMusic.find("fb_id"=>other_fb_id).to_a.first
-			if !(x) then raise ServerError end
-			doc = {"error"=>false,"success"=>true,"status_code"=>200,"fb_id"=>x["fb_id"],"data"=>x["music"]}
+			if !(x) then raise NoContentError end
+			doc = {"error"=>false,"success"=>true,"status_code"=>200,"fb_id"=>x["fb_id"],"data"=>x["music"],"message"=>x["message"]}
 			return doc.to_json
 		rescue FbGraph::InvalidToken => e
 			return {"error"=>true,"success"=>false,"status_code"=>462,"message"=>e.to_s}.to_json
@@ -190,7 +197,7 @@ module User
 		rescue TokenMisMatchError => e
 			return {"error"=>true,"success"=>false,"status_code"=>463,"message"=>e.message}.to_json
 		
-		rescue ServerError => e
+		rescue NoContentError => e
 			return {"error"=>true,"success"=>false,"status_code"=>520,"message"=>e.message}.to_json
 		end
 	end
